@@ -8,11 +8,14 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Client\SlackClient;
+use App\Entity\Comic;
+use App\Model\SendAction;
 use App\Model\Attachment;
+use App\Model\Interaction;
 use App\Model\SearchResponse;
+use App\Model\SlackRequest;
 use App\Repository\ComicRepository;
-use Monolog\Logger;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,16 +34,24 @@ class SearchController extends AbstractController
      * @var Gson
      */
     private $gson;
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
 
-    public function __construct(ComicRepository $comicRepository, Gson $gson, LoggerInterface $logger)
+    /**
+     * @var SlackClient
+     */
+    private $slackClient;
+
+    /**
+     * Constructor
+     *
+     * @param ComicRepository $comicRepository
+     * @param Gson $gson
+     * @param SlackClient $slackClient
+     */
+    public function __construct(ComicRepository $comicRepository, Gson $gson, SlackClient $slackClient)
     {
         $this->comicRepository = $comicRepository;
         $this->gson = $gson;
-        $this->logger = $logger;
+        $this->slackClient = $slackClient;
     }
 
     /**
@@ -56,17 +67,18 @@ class SearchController extends AbstractController
 
         $attachments = [];
         foreach ($comics as $comic) {
-            $attachments[] = new Attachment(
-                $comic->getText(),
-                $comic->getId(),
-                $comic->getImageUrl(),
-                $query
-            );
+            $attachment = new Attachment();
+            $attachment->setText($comic->getText())
+                ->setCallbackId($comic->getId())
+                ->setThumbUrl($comic->getImageUrl())
+                ->setActions([new SendAction($query)])
+                ->setFallback('Search failed')
+                ->setAttachmentType('default');
+            $attachments[] = $attachment;
         }
 
         $searchResponse = new SearchResponse($attachments);
 
-//        return new Response($this->gson->toJson($searchResponse), 200, ['content-type' => 'application/json']);
         return JsonResponse::fromJsonString($this->gson->toJson($searchResponse));
     }
 
@@ -80,8 +92,18 @@ class SearchController extends AbstractController
     {
         $payload = $request->request->get('payload');
 
-        $callbackId = json_decode($payload, true)['callback_id'];
-        $this->logger->log(Logger::INFO, 'interact', ['data' => $callbackId]);
+        /** @var Interaction $interaction */
+        $interaction = $this->gson->fromJson($payload, Interaction::class);
+
+        /** @var Comic $comic */
+        $comic = $this->comicRepository->find($interaction->getCallbackId());
+
+        $slackRequest = new SlackRequest(
+            $interaction->getChannelId(),
+            $interaction->getSearchText(),
+            $comic->getImageUrl()
+        );
+        $this->slackClient->sendMessage($slackRequest)->execute();
 
         return new Response();
     }
