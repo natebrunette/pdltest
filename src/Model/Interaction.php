@@ -78,7 +78,7 @@ class Interaction
      */
     public function setSearchText(string $userId, string $searchText): Interaction
     {
-        $this->searchText = '@U'.$userId.': /pdl '.$searchText;
+        $this->searchText = '@'.$userId.': /pdl '.$searchText;
 
         return $this;
     }
