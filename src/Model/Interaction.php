@@ -72,13 +72,13 @@ class Interaction
     }
 
     /**
-     * @param string $username
+     * @param string $userId
      * @param string $searchText
      * @return Interaction
      */
-    public function setSearchText(string $username, string $searchText): Interaction
+    public function setSearchText(string $userId, string $searchText): Interaction
     {
-        $this->searchText = '@'.$username.': /pdl '.$searchText;
+        $this->searchText = '@U'.$userId.': /pdl '.$searchText;
 
         return $this;
     }

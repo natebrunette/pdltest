@@ -10,11 +10,10 @@ namespace App\Controller;
 
 use App\Client\SlackClient;
 use App\Entity\Comic;
-use App\Model\DeleteMessageRequest;
-use App\Model\SendAction;
 use App\Model\Attachment;
 use App\Model\Interaction;
 use App\Model\SearchResponse;
+use App\Model\SendAction;
 use App\Model\SendMessageRequest;
 use App\Repository\ComicRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -104,14 +103,8 @@ class SearchController extends AbstractController
             $interaction->getSearchText(),
             $comic->getImageUrl()
         );
-        $this->slackClient->sendMessage($sendMessageRequest)->enqueue();
+        $this->slackClient->sendMessage($sendMessageRequest)->execute();
 
-        $deleteMessageRequest = new DeleteMessageRequest(
-            $interaction->getChannelId(),
-            $interaction->getMessageTs()
-        );
-        $this->slackClient->delete($deleteMessageRequest)->enqueue()->wait();
-
-        return new Response();
+        return JsonResponse::fromJsonString(json_encode(['delete_original' => true]));
     }
 }
