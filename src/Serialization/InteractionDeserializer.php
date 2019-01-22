@@ -32,6 +32,7 @@ class InteractionDeserializer implements JsonDeserializer
         $interaction = new Interaction();
         $interaction->setChannelId($object->get('channel')->asJsonObject()->get('id')->asString());
         $interaction->setCallbackId($object->get('callback_id')->asString());
+        $interaction->setMessageTs($object->get('message_ts')->asString());
         $interaction->setSearchText(
             $object->get('user')->asJsonObject()->get('name')->asString(),
             $object->get('actions')->asJsonArray()->get(0)->asJsonObject()->get('value')->asString()

@@ -23,6 +23,11 @@ class Interaction
     private $searchText;
 
     /**
+     * @var string
+     */
+    private $messageTs;
+
+    /**
      * @return mixed
      */
     public function getChannelId()
@@ -74,6 +79,25 @@ class Interaction
     public function setSearchText(string $username, string $searchText): Interaction
     {
         $this->searchText = '@'.$username.': /pdl '.$searchText;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMessageTs(): string
+    {
+        return $this->messageTs;
+    }
+
+    /**
+     * @param string $messageTs
+     * @return Interaction
+     */
+    public function setMessageTs(string $messageTs): Interaction
+    {
+        $this->messageTs = $messageTs;
 
         return $this;
     }
